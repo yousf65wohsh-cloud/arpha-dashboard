@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPolicy, updatePolicy, togglePolicy } from './actions';
 import { SubmitButton } from '@/components/store/SubmitButton';
 import { Empty } from '@/components/store/Notice';
+import { IconPlus, IconEdit } from '@/components/store/Icons';
 import { POLICY_CATEGORIES, type StorePolicy } from '@/lib/types';
 
 export function PoliciesClient({
@@ -46,7 +47,7 @@ export function PoliciesClient({
               onClick={() => setAdding(true)}
               disabled={isFull}
             >
-              أضف سياسة
+              <IconPlus size={15} /> أضف سياسة
             </button>
           )}
         </div>
@@ -121,7 +122,7 @@ export function PoliciesClient({
                   </div>
                   <div className="ar-item-actions">
                     <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setEditing(p.id)}>
-                      تعديل
+                      <IconEdit size={14} /> تعديل
                     </button>
                     <form action={wrap(togglePolicy)}>
                       <input type="hidden" name="id" value={p.id} />

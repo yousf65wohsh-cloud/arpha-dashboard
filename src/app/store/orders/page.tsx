@@ -1,6 +1,7 @@
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { Empty } from '@/components/store/Notice';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,10 @@ export const dynamic = 'force-dynamic';
 // في القاعدة أيضاً وليس في الواجهة وحدها.
 
 export default async function OrdersPage() {
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
 
   const { data, error } = await sb
@@ -23,7 +27,7 @@ export default async function OrdersPage() {
   const rows = (data ?? []) as Record<string, any>[];
 
   return (
-    <StoreChrome session={session} current="/store/orders">
+    <StoreChrome session={session} current="/store/orders" support={support}>
       <div className="ar-card-head">
         <h1>الطلبات</h1>
         <span className="ar-hint">آخر ٦٠ طلباً — للعرض فقط</span>

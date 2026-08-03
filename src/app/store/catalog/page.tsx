@@ -1,6 +1,7 @@
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { LimitMeter } from '@/components/store/LimitMeter';
 import { CatalogClient } from './CatalogClient';
 import type { CatalogItem } from '@/lib/types';
@@ -26,7 +27,10 @@ function mapRows(rows: Record<string, unknown>[] | null, kind: 'product' | 'serv
 }
 
 export default async function CatalogPage() {
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
 
   const [p, s] = await Promise.all([
@@ -41,10 +45,10 @@ export default async function CatalogPage() {
   const isFull = limits.catalog_used >= limits.catalog_limit;
 
   return (
-    <StoreChrome session={session} current="/store/catalog">
+    <StoreChrome session={session} current="/store/catalog" support={support}>
       <div className="ar-card-head">
-        <h1>الكتالوج</h1>
-        <span className="ar-hint">ما يعرفه البوت عن متجرك ويستطيع بيعه</span>
+        <h1>المنتجات والخدمات</h1>
+        <span className="ar-hint">ما يعرفه البوت عن عملك ويستطيع عرضه على الزبون</span>
       </div>
 
       <div className="ar-card">
@@ -58,7 +62,7 @@ export default async function CatalogPage() {
 
       {(p.error || s.error) && (
         <div className="ar-note ar-note-err">
-          تعذّر قراءة جزء من الكتالوج: {p.error?.message ?? s.error?.message}
+          تعذّر قراءة جزء من القائمة: {p.error?.message ?? s.error?.message}
           {' — '}تحقّق من سياسات RLS في الهجرة 021 ومن أسماء الأعمدة.
         </div>
       )}

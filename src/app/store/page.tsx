@@ -2,12 +2,17 @@ import Link from 'next/link';
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { LimitMeter } from '@/components/store/LimitMeter';
+import { IconQuestion, IconCheck } from '@/components/store/Icons';
 
 export const dynamic = 'force-dynamic';
 
 export default async function StoreHome() {
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
   const { limits } = session;
 
@@ -19,22 +24,22 @@ export default async function StoreHome() {
     .limit(3);
 
   return (
-    <StoreChrome session={session} current="/store">
+    <StoreChrome session={session} current="/store" support={support}>
       {limits.pending_count > 0 ? (
         <div className="ar-note ar-note-warn">
-          <strong>{limits.pending_count}</strong> سؤال ينتظر جوابك. كل جواب تكتبه يصبح
+          <IconQuestion size={15} />{' '}<strong>{limits.pending_count}</strong> سؤال ينتظر جوابك. كل جواب تكتبه يصبح
           معرفة يستخدمها البوت مع بقية الزبائن.{' '}
           <Link href="/store/questions">افتح الأسئلة المعلقة ←</Link>
         </div>
       ) : (
         <div className="ar-note ar-note-info">
-          لا توجد أسئلة معلقة. البوت فهم كل ما وصله حتى الآن.
+          <IconCheck size={15} />{' '}لا توجد أسئلة معلقة. البوت فهم كل ما وصله حتى الآن.
         </div>
       )}
 
       <div className="ar-grid">
         <div className="ar-card">
-          <LimitMeter label="خانات الكتالوج" used={limits.catalog_used} limit={limits.catalog_limit} />
+          <LimitMeter label="المنتجات والخدمات" used={limits.catalog_used} limit={limits.catalog_limit} />
         </div>
         <div className="ar-card">
           <LimitMeter label="السياسات" used={limits.policies_used} limit={limits.policies_limit} />

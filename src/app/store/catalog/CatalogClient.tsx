@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createItem, updateItem, toggleItem } from './actions';
 import { SubmitButton } from '@/components/store/SubmitButton';
 import { Empty } from '@/components/store/Notice';
+import { IconPlus, IconEdit, IconEye, IconEyeOff } from '@/components/store/Icons';
 import type { CatalogItem } from '@/lib/types';
 
 type Msg = { ok: boolean; text: string } | null;
@@ -37,7 +38,7 @@ export function CatalogClient({
               onClick={() => setAdding(true)}
               disabled={isFull}
             >
-              أضف عنصراً
+              <IconPlus size={15} /> أضف عنصراً
             </button>
           )}
         </div>
@@ -83,8 +84,8 @@ export function CatalogClient({
 
         {items.length === 0 ? (
           <Empty
-            title="الكتالوج فارغ"
-            body="أضف أول منتج أو خدمة — البوت لا يستطيع بيع ما لا يعرفه."
+            title="لا عناصر بعد"
+            body="أضف أول منتج أو خدمة — البوت لا يستطيع عرض ما لا يعرفه."
           />
         ) : (
           <div className="ar-list">
@@ -149,14 +150,14 @@ export function CatalogClient({
                   </div>
                   <div className="ar-item-actions">
                     <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setEditing(it.id)}>
-                      تعديل
+                      <IconEdit size={14} /> تعديل
                     </button>
                     <form action={wrap(toggleItem)}>
                       <input type="hidden" name="id" value={it.id} />
                       <input type="hidden" name="kind" value={it.kind} />
                       <input type="hidden" name="next" value={it.is_active ? '0' : '1'} />
                       <SubmitButton variant={it.is_active ? 'danger' : 'ghost'} small pendingText="…">
-                        {it.is_active ? 'إخفاء' : 'إظهار'}
+                        {it.is_active ? <><IconEyeOff size={14} /> إخفاء</> : <><IconEye size={14} /> إظهار</>}
                       </SubmitButton>
                     </form>
                   </div>

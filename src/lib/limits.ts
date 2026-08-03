@@ -2,7 +2,7 @@
 // المصدر: raise exception 'ARPHA_LIMIT:<kind>:<used>:<limit>' في الهجرة 020.
 
 const KIND_LABEL: Record<string, string> = {
-  catalog:  'عناصر الكتالوج',
+  catalog:  'المنتجات والخدمات',
   rules:    'قواعد البوت',
   policies: 'السياسات',
 };

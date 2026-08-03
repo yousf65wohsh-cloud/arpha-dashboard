@@ -1,6 +1,7 @@
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { Empty } from '@/components/store/Notice';
 import { TeachCard } from './TeachCard';
 import type { PendingQuestion } from '@/lib/types';
@@ -13,7 +14,10 @@ export default async function QuestionsPage({
   const { tab } = await searchParams;
   const showAnswered = tab === 'resolved';
 
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
 
   const { data } = await sb
@@ -27,7 +31,7 @@ export default async function QuestionsPage({
   const policiesFull = session.limits.policies_used >= session.limits.policies_limit;
 
   return (
-    <StoreChrome session={session} current="/store/questions">
+    <StoreChrome session={session} current="/store/questions" support={support}>
       <div className="ar-card-head">
         <h1>الأسئلة المعلقة</h1>
         <span className="ar-hint">

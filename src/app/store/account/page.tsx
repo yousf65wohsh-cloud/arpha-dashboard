@@ -1,6 +1,7 @@
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { openRequest } from './actions';
 import { SubmitButton } from '@/components/store/SubmitButton';
 import { REQUEST_TYPES, type ChangeRequest } from '@/lib/types';
@@ -8,7 +9,10 @@ import { REQUEST_TYPES, type ChangeRequest } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export default async function AccountPage() {
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
 
   const [{ data: store }, { data: reqs }] = await Promise.all([
@@ -22,7 +26,7 @@ export default async function AccountPage() {
     : null;
 
   return (
-    <StoreChrome session={session} current="/store/account">
+    <StoreChrome session={session} current="/store/account" support={support}>
       <div className="ar-card-head">
         <h1>الحساب</h1>
         <span className="ar-hint">بياناتك واشتراكك</span>
@@ -65,7 +69,7 @@ export default async function AccountPage() {
         <table className="ar-table">
           <tbody>
             <tr>
-              <td>خانات الكتالوج</td>
+              <td>خانات المنتجات والخدمات</td>
               <td className="ar-num">{session.limits.catalog_used} / {session.limits.catalog_limit}</td>
             </tr>
             <tr>

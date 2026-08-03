@@ -130,7 +130,7 @@ export function NewStoreForm({ plans }: { plans: Plan[] }) {
         </div>
         <div className="ar-row">
           <label className="ar-field">
-            <span>تجاوز حد الكتالوج</span>
+            <span>تجاوز حد المنتجات والخدمات</span>
             <input className="ar-input ar-num" name="max_catalog_items_override" type="number" min={0} placeholder="—" />
           </label>
           <label className="ar-field">

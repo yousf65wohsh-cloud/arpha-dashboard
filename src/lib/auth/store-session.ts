@@ -26,16 +26,13 @@ export async function getStoreSession(): Promise<StoreSession | null> {
 
   if (!su || !su.is_active) return null;
 
-  // stores مقروء فقط عبر auth_store_id() — إن رجع فارغاً فالاشتراك موقوف.
-  const { data: store } = await sb
-    .from('stores')
-    .select('id, name')
-    .eq('id', su.store_id)
-    .maybeSingle();
+  // الاستعلامان مستقلان، فيمشيان معاً — يوفّر رحلة كاملة إلى القاعدة.
+  const [{ data: store }, { data: limits }] = await Promise.all([
+    sb.from('stores').select('id, name').eq('id', su.store_id).maybeSingle(),
+    sb.rpc('store_my_limits'),
+  ]);
 
   if (!store) return null;
-
-  const { data: limits } = await sb.rpc('store_my_limits');
 
   return {
     user: su as StoreUser,

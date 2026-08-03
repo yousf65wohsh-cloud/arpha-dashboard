@@ -1,6 +1,7 @@
 import { requireStoreSession } from '@/lib/auth/store-session';
 import { supabaseServer } from '@/lib/supabase/server';
 import { StoreChrome } from '@/components/store/StoreChrome';
+import { getSupportSettings } from '@/lib/settings';
 import { LimitMeter } from '@/components/store/LimitMeter';
 import { PoliciesClient } from './PoliciesClient';
 import type { StorePolicy } from '@/lib/types';
@@ -8,7 +9,10 @@ import type { StorePolicy } from '@/lib/types';
 export const dynamic = 'force-dynamic';
 
 export default async function PoliciesPage() {
-  const session = await requireStoreSession();
+  const [session, support] = await Promise.all([
+    requireStoreSession(),
+    getSupportSettings(),
+  ]);
   const sb = await supabaseServer();
 
   const { data, error } = await sb
@@ -20,7 +24,7 @@ export default async function PoliciesPage() {
   const { limits } = session;
 
   return (
-    <StoreChrome session={session} current="/store/policies">
+    <StoreChrome session={session} current="/store/policies" support={support}>
       <div className="ar-card-head">
         <h1>السياسات</h1>
         <span className="ar-hint">أجوبة جاهزة يبحث فيها البوت قبل أن يرد</span>
