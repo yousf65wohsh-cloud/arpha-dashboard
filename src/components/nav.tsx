@@ -9,6 +9,9 @@ const LINKS = [
   { href: "/escalations", label: "تصعيدات" },
   { href: "/catalog",     label: "الكتالوج" },
   { href: "/stores",      label: "المتاجر" },
+  { href: "/admin/requests", label: "طلبات المتاجر" },
+  { href: "/admin/accounts", label: "إدارة المتاجر" },
+  { href: "/admin/settings", label: "إعدادات التواصل" },
 ];
 
 export function Nav() {
