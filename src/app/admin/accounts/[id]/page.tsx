@@ -14,11 +14,16 @@ export default async function ManageStorePage({
   const { id } = await params;
   const sb = supabaseAdmin();
 
-  const [{ data: store }, { data: user }, { data: plans }, { data: usageRaw }] = await Promise.all([
+  const [
+    { data: store }, { data: user }, { data: plans },
+    { data: usageRaw }, { data: modules },
+  ] = await Promise.all([
     sb.from('stores').select('*').eq('id', id).maybeSingle(),
     sb.from('store_users').select('*').eq('store_id', id).eq('role', 'owner').maybeSingle(),
     sb.from('plans').select('id, name').order('name'),
     sb.rpc('arpha_count_catalog', { p_store_id: id }),
+    sb.from('store_modules').select('module_key')
+      .eq('store_id', id).eq('enabled', true).order('sort_order'),
   ]);
 
   if (!store) notFound();
@@ -47,6 +52,7 @@ export default async function ManageStorePage({
             policies: policies ?? 0,
             rules: rules ?? 0,
           }}
+          enabledModules={((modules ?? []) as { module_key: string }[]).map((m) => m.module_key)}
         />
       </div>
     </div>

@@ -3,22 +3,30 @@
 import { useState } from 'react';
 import {
   updateStoreSettings, setServiceStatus, renewSubscription,
-  resetStorePassword, changeLoginId, toggleStoreUser,
+  resetStorePassword, changeLoginId, toggleStoreUser, updateStoreModules,
 } from '../actions';
 import { SubmitButton } from '@/components/store/SubmitButton';
+import {
+  BUSINESS_TYPES, MODULE_INFO, type BusinessType, type ModuleKey,
+} from '@/lib/business-types';
 
 type Any = Record<string, any>;
 
 export function ManageClient({
-  store, user, plans, usage,
+  store, user, plans, usage, enabledModules,
 }: {
   store: Any;
   user: Any | null;
   plans: { id: string; name: string }[];
   usage: { catalog: number; policies: number; rules: number };
+  enabledModules: string[];
 }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [creds, setCreds] = useState<{ loginId: string; password: string } | null>(null);
+  const [mods, setMods] = useState<ModuleKey[]>((enabledModules ?? []) as ModuleKey[]);
+
+  const toggleMod = (k: ModuleKey) =>
+    setMods((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
 
   const wrap =
     (fn: (fd: FormData) => Promise<Any>) =>
@@ -170,6 +178,18 @@ export function ManageClient({
               </select>
             </label>
             <label className="ar-field">
+              <span>نوع العمل</span>
+              <select className="ar-select" name="business_type"
+                      defaultValue={store.business_type ?? 'custom'}>
+                {(Object.keys(BUSINESS_TYPES) as BusinessType[]).map((t) => (
+                  <option key={t} value={t}>{BUSINESS_TYPES[t].typeName}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="ar-row">
+            <label className="ar-field">
               <span>اسم بوت الزبائن (بدون @)</span>
               <input className="ar-input" name="customer_bot_username" dir="ltr"
                      defaultValue={store.customer_bot_username ?? ''} />
@@ -218,6 +238,41 @@ export function ManageClient({
           </p>
 
           <SubmitButton>احفظ الإعدادات</SubmitButton>
+        </div>
+      </form>
+
+      <form action={wrap(updateStoreModules)}>
+        <input type="hidden" name="store_id" value={store.id} />
+
+        <div className="ar-card">
+          <div className="ar-card-head">
+            <h2>الأقسام المفعَّلة</h2>
+            <span className="ar-hint">تظهر في تنقّل صاحب المتجر فوراً بعد الحفظ</span>
+          </div>
+
+          <div className="ar-mod-grid">
+            {(Object.keys(MODULE_INFO) as ModuleKey[])
+              .filter((k) => k !== 'finance')
+              .map((k) => (
+                <label className="ar-mod" key={k} data-on={mods.includes(k) ? '1' : '0'}>
+                  <input
+                    type="checkbox" name="modules" value={k}
+                    checked={mods.includes(k)} onChange={() => toggleMod(k)}
+                  />
+                  <span>
+                    <strong>{MODULE_INFO[k].name}</strong>
+                    <em>{MODULE_INFO[k].hint}</em>
+                  </span>
+                </label>
+              ))}
+          </div>
+
+          <p className="ar-hint" style={{ margin: '12px 0' }}>
+            إطفاء قسم يخفيه عن صاحب المتجر ولا يحذف أي بيانات. إعادة تفعيله
+            تُرجعها كما كانت.
+          </p>
+
+          <SubmitButton>احفظ الأقسام</SubmitButton>
         </div>
       </form>
     </>

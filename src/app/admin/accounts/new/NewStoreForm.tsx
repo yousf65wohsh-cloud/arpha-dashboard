@@ -4,12 +4,27 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createStoreAccount } from '../actions';
 import { SubmitButton } from '@/components/store/SubmitButton';
+import {
+  BUSINESS_TYPES, DEFAULT_MODULES, MODULE_INFO,
+  type BusinessType, type ModuleKey,
+} from '@/lib/business-types';
 
 type Plan = { id: string; name: string; max_catalog_items?: number | null };
 
 export function NewStoreForm({ plans }: { plans: Plan[] }) {
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState<{ loginId: string; password: string; storeId: string } | null>(null);
+  const [bizType, setBizType] = useState<BusinessType>('custom');
+  const [modules, setModules] = useState<ModuleKey[]>(DEFAULT_MODULES.custom);
+
+  // تغيير النوع يعيد ضبط الوحدات على افتراضي النوع الجديد
+  function pickType(t: BusinessType) {
+    setBizType(t);
+    setModules(DEFAULT_MODULES[t]);
+  }
+
+  const toggle = (k: ModuleKey) =>
+    setModules((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
 
   async function submit(fd: FormData) {
     const r = await createStoreAccount(fd);
@@ -84,6 +99,55 @@ export function NewStoreForm({ plans }: { plans: Plan[] }) {
             <input className="ar-input" name="customer_bot_username" dir="ltr" placeholder="my_store_bot" />
           </label>
         </div>
+      </div>
+
+      <div className="ar-card">
+        <div className="ar-card-head">
+          <h2>نوع العمل</h2>
+          <span className="ar-hint">يحدّد التسميات والأقسام في لوحة صاحب المتجر</span>
+        </div>
+
+        <input type="hidden" name="business_type" value={bizType} />
+        <input type="hidden" name="modules_present" value="1" />
+
+        <div className="ar-type-grid">
+          {(Object.keys(BUSINESS_TYPES) as BusinessType[]).map((t) => (
+            <button
+              key={t} type="button" className="ar-type-card"
+              data-on={t === bizType ? '1' : '0'}
+              onClick={() => pickType(t)}
+            >
+              <strong>{BUSINESS_TYPES[t].typeName}</strong>
+              <span>{BUSINESS_TYPES[t].typeHint}</span>
+            </button>
+          ))}
+        </div>
+
+        <p className="ar-hint" style={{ margin: '14px 0 8px' }}>
+          الأقسام المفعَّلة — عدّلها إن احتاج هذا المتجر شيئاً خارج المعتاد:
+        </p>
+
+        <div className="ar-mod-grid">
+          {(Object.keys(MODULE_INFO) as ModuleKey[])
+            .filter((k) => k !== 'finance')
+            .map((k) => (
+              <label className="ar-mod" key={k} data-on={modules.includes(k) ? '1' : '0'}>
+                <input
+                  type="checkbox" name="modules" value={k}
+                  checked={modules.includes(k)} onChange={() => toggle(k)}
+                />
+                <span>
+                  <strong>{MODULE_INFO[k].name}</strong>
+                  <em>{MODULE_INFO[k].hint}</em>
+                </span>
+              </label>
+            ))}
+        </div>
+
+        <p className="ar-hint" style={{ marginTop: 10 }}>
+          نظرة عامة، الأسئلة المعلقة، السياسات، قواعد البوت، التقارير، والحساب
+          تعمل لكل متجر دائماً.
+        </p>
       </div>
 
       <div className="ar-card">

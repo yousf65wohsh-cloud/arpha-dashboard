@@ -6,6 +6,7 @@ import { supabaseAdmin, loginIdToEmail, isValidLoginId } from '@/lib/supabase/ad
 import { requireAdmin } from '@/lib/auth/admin-guard';
 import { humanizeDbError } from '@/lib/limits';
 import type { ActionResult } from '@/lib/types';
+import { DEFAULT_MODULES, type BusinessType, type ModuleKey } from '@/lib/business-types';
 
 // كل دالة هنا تبدأ بـ requireAdmin(). Server Action نقطة دخول HTTP قائمة بذاتها
 // — حماية الصفحة التي تستدعيها لا تحميها.
@@ -47,6 +48,16 @@ export async function createStoreAccount(formData: FormData): Promise<CreateResu
   const password = String(formData.get('password') ?? '').trim() || generatePassword();
   if (password.length < 10) return { ok: false, error: 'كلمة المرور قصيرة — ١٠ خانات على الأقل.' };
 
+  const businessType = String(formData.get('business_type') ?? 'custom') as BusinessType;
+  if (!['restaurant', 'clinic', 'online_store', 'custom'].includes(businessType)) {
+    return { ok: false, error: 'نوع العمل غير معروف.' };
+  }
+
+  // checkbox واحد لكل وحدة. غياب الحقل كلياً يعني: استخدم افتراضي النوع.
+  const modules: ModuleKey[] = formData.has('modules_present')
+    ? (formData.getAll('modules').map(String) as ModuleKey[])
+    : DEFAULT_MODULES[businessType];
+
   const sb = supabaseAdmin();
 
   const { data: taken } = await sb
@@ -76,6 +87,7 @@ export async function createStoreAccount(formData: FormData): Promise<CreateResu
     .insert({
       name: storeName,
       plan_id: planId,
+      business_type: businessType,
       owner_name: ownerName,
       owner_phone: ownerPhone,
       customer_bot_username: botUsername || null,
@@ -109,6 +121,15 @@ export async function createStoreAccount(formData: FormData): Promise<CreateResu
     await sb.from('stores').delete().eq('id', store.id);
     await sb.auth.admin.deleteUser(authUserId);
     return { ok: false, error: `تعذّر ربط الحساب بالمتجر: ${humanizeDbError(linkErr.message)}` };
+  }
+
+  // الوحدات المختارة. الفشل هنا لا يُلغي المتجر — يُصحَّح من صفحة الإدارة.
+  if (modules.length > 0) {
+    await sb.from('store_modules').insert(
+      modules.map((key, i) => ({
+        store_id: store.id, module_key: key, enabled: true, sort_order: (i + 1) * 10,
+      })),
+    );
   }
 
   revalidatePath('/admin/accounts');
@@ -178,6 +199,7 @@ export async function updateStoreSettings(formData: FormData): Promise<ActionRes
 
   const patch: Record<string, unknown> = {
     plan_id: String(formData.get('plan_id') ?? '').trim() || null,
+    business_type: String(formData.get('business_type') ?? 'custom'),
     owner_name: String(formData.get('owner_name') ?? '').trim() || null,
     owner_phone: String(formData.get('owner_phone') ?? '').trim() || null,
     customer_bot_username:
@@ -264,4 +286,35 @@ export async function toggleStoreUser(formData: FormData): Promise<ActionResult>
 
   if (su) revalidatePath(`/admin/accounts/${su.store_id}`);
   return { ok: true, message: next ? 'فُعّل الحساب.' : 'أُوقف الحساب.' };
+}
+
+export async function updateStoreModules(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+
+  const storeId = String(formData.get('store_id') ?? '');
+  const selected = formData.getAll('modules').map(String);
+
+  const valid = ['catalog', 'orders', 'bookings', 'reviews', 'finance'];
+  if (selected.some((m) => !valid.includes(m))) {
+    return { ok: false, error: 'وحدة غير معروفة.' };
+  }
+
+  const sb = supabaseAdmin();
+
+  // استبدال كامل: احذف ثم أدرج. أبسط من المطابقة صفاً صفاً، والجدول صغير.
+  const { error: delErr } = await sb.from('store_modules').delete().eq('store_id', storeId);
+  if (delErr) return { ok: false, error: humanizeDbError(delErr.message) };
+
+  if (selected.length > 0) {
+    const { error } = await sb.from('store_modules').insert(
+      selected.map((key, i) => ({
+        store_id: storeId, module_key: key, enabled: true, sort_order: (i + 1) * 10,
+      })),
+    );
+    if (error) return { ok: false, error: humanizeDbError(error.message) };
+  }
+
+  revalidatePath(`/admin/accounts/${storeId}`);
+  revalidatePath('/store', 'layout');   // تنقّل صاحب المتجر يتغيّر فوراً
+  return { ok: true, message: 'حُفظت الأقسام.' };
 }
